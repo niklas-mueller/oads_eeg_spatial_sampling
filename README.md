@@ -7,6 +7,10 @@ Preprint [https://www.biorxiv.org/content/10.1101/2024.08.05.606515v1](https://w
 
 The EEG data can be found in the following repositories:
 
-- Main experiment [https://osf.io/v5ktp/](https://osf.io/v5ktp/)
+- Main experiment 
+    - Preprocessed [OSF](https://osf.io/v5ktp/)
+    - Raw (BIDS) [OpenNeuro]()
 
-- Additional Experiments [https://osf.io/myuj8/](https://osf.io/myuj8/)
+- Additional Experiments 
+    - Preprocessed [OSF](https://osf.io/myuj8/)
+    - Raw (BIDS) [OpenNeuro]()

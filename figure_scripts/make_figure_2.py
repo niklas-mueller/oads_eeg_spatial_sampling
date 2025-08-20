@@ -15,10 +15,12 @@ from figure_utils import *
 if __name__ == '__main__':
 
     home_path = os.path.expanduser('~')
-    result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/'
+    # result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/'
+    result_dir = '/home/nmuller/projects/oads_eeg_spatial_sampling/results'
 
-    figure_dir = '/home/nmuller/projects/fmg_storage/tux20_oads_eeg_paper_figures'
-    # os.makedirs(figure_dir, exist_ok=True)
+    # figure_dir = '/home/nmuller/projects/fmg_storage/tux20_oads_eeg_paper_figures'
+    figure_dir = '/home/nmuller/projects/oads_eeg_spatial_sampling/figures'
+    os.makedirs(figure_dir, exist_ok=True)
 
     tab10 = mpl.colormaps.get_cmap('tab10')
     tab20 = mpl.colormaps.get_cmap('tab20')
@@ -48,12 +50,18 @@ if __name__ == '__main__':
     visual_channel_names = ['O1', 'O2', 'Oz', 'Iz', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'PO3', 'PO7', 'Pz', 'POz', 'PO4', 'PO8', 'I1', 'I2']
 
     # Load data
-    folder = 'encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject'
-    df_imagenet = pd.read_parquet(os.path.join(result_dir, 'correct_size_new_fit', folder, f'all_encoding_model_data_alexnet_imagenet_feature_cropping-AutoReject.parquet'))
+    # folder = 'encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject'
+    folder = 'encoding_alexnet_feature-croppingAutoReject'
+    # df_imagenet = pd.read_parquet(os.path.join(result_dir, 'correct_size_new_fit', folder, f'all_encoding_model_data_alexnet_imagenet_feature_cropping-AutoReject.parquet'))
+    df_imagenet = pd.read_parquet(os.path.join(result_dir, folder, f'all_encoding_model_data_feature_cropping-AutoReject.parquet'))
 
-    _main_data = df_imagenet[(df_imagenet['metric'] == 'test_corr_train') & (df_imagenet['layer'] == 'across-layers') & (df_imagenet['crop_condition'].isin(['feature', 'fraction', 'gcs']) & (df_imagenet['crop_instance'].isin(['feature-full', 'center', 'periphery', 'gcs-full'])))]
-    _main_data.loc[:, 'crop_condition'] = _main_data.crop_condition.cat.remove_unused_categories()
-    _main_data.loc[:, 'crop_instance'] = _main_data.crop_instance.cat.remove_unused_categories()
+    _main_data = df_imagenet[(df_imagenet['metric'] == 'test_corr_train') & 
+                            (df_imagenet['layer'] == 'across-layers') & 
+                            (df_imagenet['crop_condition'].isin(['feature', 'fraction', 'gcs']) & 
+                            (df_imagenet['crop_instance'].isin(['feature-full', 'center', 'periphery', 'gcs-full'])))].copy()
+
+    _main_data.crop_condition = _main_data.crop_condition.cat.remove_unused_categories()
+    _main_data.crop_instance = _main_data.crop_instance.cat.remove_unused_categories()
 
     # Load Noise Ceiling
     noise_ceiling_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/oads_eeg'
@@ -107,6 +115,7 @@ if __name__ == '__main__':
     # fig, ax = plt.subplots(n_rows, n_cols, figsize=(30, 18), gridspec_kw={"width_ratios":[10,8,8,8,8,8,8,2], 'height_ratios':[2,2,2,2,3,3]})
     # =========================================================
     fig = plt.figure(layout='constrained', figsize=(33, 24))
+    # fig = plt.figure(layout='constrained', figsize=(25, 18))
 
     subfigs = fig.subfigures(1, 2, width_ratios=[1, 7], wspace=0.1)
 
@@ -186,7 +195,7 @@ if __name__ == '__main__':
                     lineplots[ax_index].plot(timepoint, -0.08-cond_index*0.02, '*', color=pval_colors[cond_index])
     ######################
 
-
+    import warnings
 
     #### Full vs Center
     all_tvalues = {}
@@ -225,7 +234,6 @@ if __name__ == '__main__':
     # #########################################
     get_feature_axes(np.array(feature_plots), set_title=True, axis_off=False)
     #########################################
-
 
     #### GCS vs Full
     tvalues = {}
@@ -385,5 +393,6 @@ if __name__ == '__main__':
     # feature_plots[0].text(0.6, 0.15, 'f)', color='black', size=40, weight='bold', clip_on=False, zorder=15, transform=fig.transFigure)
 
     # fig.savefig(os.path.join(figure_dir, f'main_fig_imagenet_lineplots.png'), dpi=300., bbox_inches='tight')
+    fig.savefig(os.path.join(figure_dir, f'figure2.png'), dpi=300., bbox_inches='tight')
 
-    plt.show()
+    # plt.show()

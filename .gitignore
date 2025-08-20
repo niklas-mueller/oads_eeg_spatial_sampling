@@ -1,2 +1,6 @@
 __pycache__/
 
+results
+TEST_results
+prepare_results.ipynb
+figures

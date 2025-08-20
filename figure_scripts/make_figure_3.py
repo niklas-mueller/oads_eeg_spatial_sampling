@@ -17,7 +17,8 @@ if __name__ == '__main__':
     home_path = os.path.expanduser('~')
     result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/'
 
-    figure_dir = '/home/nmuller/projects/fmg_storage/tux20_oads_eeg_paper_figures'
+    # figure_dir = '/home/nmuller/projects/fmg_storage/tux20_oads_eeg_paper_figures'
+    figure_dir = '/home/nmuller/projects/oads_eeg_spatial_sampling/figures'
     os.makedirs(figure_dir, exist_ok=True)
 
     tab10 = mpl.cm.get_cmap('tab10')
@@ -42,9 +43,11 @@ if __name__ == '__main__':
     # Load data
 
 
-    folder = 'encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject'
-    df_imagenet_partial = pd.read_parquet(os.path.join(result_dir, f'correct_size_new_fit/encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject',
-                        f'all_encoding_model_data_alexnet_imagenet_partial-corr_feature_cropping-AutoReject.parquet'))
+    # folder = 'encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject'
+    folder = 'encoding_alexnet_feature-croppingAutoReject'
+    # df_imagenet_partial = pd.read_parquet(os.path.join(result_dir, f'correct_size_new_fit/encoding_alexnet_imagenet_share-pca_partial-corr_feature-cropping-AutoReject',
+    #                     f'all_encoding_model_data_alexnet_imagenet_partial-corr_feature_cropping-AutoReject.parquet'))
+    df_imagenet_partial = pd.read_parquet(os.path.join(result_dir, folder, f'all_encoding_model_data_alexnet_imagenet_partial-corr_feature_cropping-AutoReject.parquet'))
 
 
 
@@ -250,4 +253,5 @@ if __name__ == '__main__':
     f.fig.set_size_inches(35, 12)
 
     # f.fig.savefig(os.path.join(figure_dir, f'imagenet_center_vs_periphery_vs_full_partial_simple.png'), dpi=300., bbox_inches='tight')
+    f.fig.savefig(os.path.join(figure_dir, f'figure3.png'), dpi=300., bbox_inches='tight')
     plt.show()

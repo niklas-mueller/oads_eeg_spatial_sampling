@@ -35,9 +35,15 @@ def run_subject(sub):
     events = mne.find_events(data)
 
     # Get trigger id mapping codes
+    # try:
     sub_matrix_filename = [x for x in os.listdir(os.path.join(data_dir, f'sub_{sub}')) if x.endswith('csv') and 'randomized_matrix' in x][0]
-
     sub_images = pd.read_csv(os.path.join(data_dir, f'sub_{sub}', sub_matrix_filename), header=None)
+
+    # except IndexError:
+    #     sub_images = pd.read_csv(os.path.join('/home/nmuller/projects/fmg_storage/OADS EEG Experiment/Subject_matrix', f'sub_{sub}_randomized_matrix_702.csv'), header=None)
+        # import shutil
+        # shutil.copy(os.path.join('/home/nmuller/projects/fmg_storage/OADS EEG Experiment/Subject_matrix', f'sub_{sub}_randomized_matrix_702.csv'), os.path.join(data_dir, f'sub_{sub}', f'sub_{sub}_randomized_matrix_702.csv'))
+
     sub_images = sub_images.values.tolist()
     sub_images = [i for image in sub_images for i in image]   #Flatten the list
 
@@ -84,5 +90,11 @@ def run_subject(sub):
 
 
 if __name__ == '__main__':
-    for sub in range(7, 36):
-        run_subject(sub)
+    
+    # for sub in range(24, 36):
+    for sub in range(24, 36):
+        try:
+            run_subject(sub)
+        except (ValueError, IndexError) as e:
+            print(f"Error in subject {sub}: {e}")
+            continue

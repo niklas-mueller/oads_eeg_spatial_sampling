@@ -1,6 +1,7 @@
 import sys
-sys.path.append('/home/nmuller/projects/oads_eeg_spatial_sampling/')
+sys.path.append('..')
 from utils import record_activations
+from oads_eeg_spatial_sampling.analysis.GDS import ToRetinalGanglionCellSampling
 import os
 import numpy as np
 from PIL import Image
@@ -13,6 +14,14 @@ from mne import create_info
 from mne.viz import plot_topomap
 from mne.channels import make_dig_montage, make_standard_montage
 import torch
+from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision import transforms
+import matplotlib as mpl
+tab10 = mpl.colormaps.get_cmap('tab10')
+tab20 = mpl.colormaps.get_cmap('tab20')
+tab20c = mpl.colormaps.get_cmap('tab20c')
+tab20b = mpl.colormaps.get_cmap('tab20b')
+
 
 def get_circular_mask(size, center_fraction):
 
@@ -174,9 +183,14 @@ def get_fdr_correct_pvals(_data, channels, alpha, colors, crop_instances=['featu
             condition_stats[channel][crop_instance] = {}
             for timepoint in timepoints:
                 vals = _tval_data[((_tval_data['crop_instance'] == crop_instance) & (_tval_data['timepoint'] == timepoint) & (_tval_data.channel == channel))].value.values
-                res = ttest_1samp(vals, popmean=0, alternative='greater')
-                condition_stats[channel][crop_instance][timepoint] = res
-                all_pvals.append((crop_instance, timepoint, channel, res.pvalue))
+                if len(vals) < 5:
+                    # print(f'Not enough data for {channel} {crop_instance} {timepoint}')
+                    res = None
+                    all_pvals.append((crop_instance, timepoint, channel, 1.0))
+                else:
+                    res = ttest_1samp(vals, popmean=0, alternative='greater')
+                    condition_stats[channel][crop_instance][timepoint] = res
+                    all_pvals.append((crop_instance, timepoint, channel, res.pvalue))
     
     
     fdr_corrected_pvals = fdrcorrection([x[-1] for x in all_pvals], alpha=alpha)
@@ -244,7 +258,7 @@ def get_dnn_feature_examples():
             img = img.postprocess()
             img = Image.fromarray(img).reduce(4)
 
-            images.append(img)
+            images.append((img, image_filenames[index]))
 
     use_rgbedges = False
     use_cocedges = False
@@ -272,7 +286,7 @@ def get_dnn_feature_examples():
     transform = transforms.Compose(transform_list)
 
 
-    trainloader = [[transform(img).to(device).unsqueeze(0), _, torch.tensor([index]).to(device)] for index, img in enumerate(images)]
+    trainloader = [[transform(img).to(device).unsqueeze(0), None, torch.tensor([index]).to(device), image_name] for index, (img, image_name) in enumerate(images)]
     activations = record_activations(loader=trainloader, models=[('alexnet', feature_extractor)], device=device, flatten=False, layer_names=return_nodes.values())
 
     # feature = activations['alexnet_layer1'][0][17]
@@ -283,7 +297,12 @@ def get_feature_axes(ax, set_title, feature=None, axis_off:bool=True, cmap='gray
 
     if feature is None:
         activations = get_dnn_feature_examples()
-        feature = activations['alexnet_layer1'][0][17]
+        image_name = list(activations['alexnet_layer1'].keys())[0]
+        feature = activations['alexnet_layer1'][image_name][17]
+
+    feature_shape = feature.shape
+    out_size = (feature_shape[1], feature_shape[1])
+    gcs_feature = ToRetinalGanglionCellSampling(image_shape=out_size + ((1,)), out_size=feature_shape[1], series=1, dtype=np.float32)
     
     fraction = np.sqrt(0.005)
     shape = feature.shape
@@ -300,6 +319,7 @@ def get_feature_axes(ax, set_title, feature=None, axis_off:bool=True, cmap='gray
 
     mask[row_start:row_end, col_start:col_end] = True
     whole_size = shape[0]*shape[1]
+
 
 
     # Full Scene
@@ -323,9 +343,9 @@ def get_feature_axes(ax, set_title, feature=None, axis_off:bool=True, cmap='gray
 
     # # GCS
     ax[3].imshow(gcs_feature(feature), cmap=cmap)
-    brown_patch = mpatches.Rectangle((-1, -1), shape[1]+1, shape[1]+1, edgecolor='black', facecolor='none', linewidth=8, clip_on=False, zorder=100)
-    ax[3].add_patch(brown_patch)
-
+    black_patch = mpatches.Rectangle((-1, -1), shape[1]+1, shape[1]+1, edgecolor='black', facecolor='none', linewidth=8, clip_on=False, zorder=100)
+    ax[3].add_patch(black_patch)
+    
     if axis_off:
         for _ax in ax.flatten():
             _ax.axis('off')
