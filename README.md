@@ -1,16 +1,8 @@
-# Spatial sampling of deep neural network features improves encoding models of foveal and peripheral visual processing in humans
+# Spatially sampling convolutional neural network features predicts foveal and peripheral human visual processing
 
-This repository contains the code for the paper: Spatial sampling of deep neural network features improves encoding models of foveal and peripheral visual processing in humans.
+This repository contains the code for the paper: "Spatially sampling convolutional neural network features predicts foveal and peripheral human visual processing".
 
 Preprint [https://www.biorxiv.org/content/10.1101/2024.08.05.606515v1](https://www.biorxiv.org/content/10.1101/2024.08.05.606515v1)
 
 
-The EEG data can be found in the following repositories:
-
-- Main experiment 
-    - Preprocessed [OSF](https://osf.io/v5ktp/)
-    - Raw (BIDS) [OpenNeuro]()
-
-- Additional Experiments 
-    - Preprocessed [OSF](https://osf.io/myuj8/)
-    - Raw (BIDS) [OpenNeuro]()
+All data and results associated with this paper can be found on [OSF (https://osf.io/tu34h/)](https://osf.io/tu34h/)
