@@ -1,6 +1,10 @@
 __pycache__/
 
 results
+additional_results
 TEST_results
 prepare_results.ipynb
 figures
+dataset
+
+figure_scripts/task_accuracy_per_subject.ipynb

@@ -9,8 +9,6 @@ The EEG data can be found in the following repositories:
 
 - Main experiment 
     - Preprocessed [OSF](https://osf.io/v5ktp/)
-    - Raw (BIDS) [OpenNeuro]()
 
 - Additional Experiments 
     - Preprocessed [OSF](https://osf.io/myuj8/)
-    - Raw (BIDS) [OpenNeuro]()

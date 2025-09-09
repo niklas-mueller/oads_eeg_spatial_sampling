@@ -22,10 +22,11 @@ class CustomOADS():
         image_names (list): A list of image names in the dataset.
     """
     
-    def __init__(self, basedir, n_processes):
+    def __init__(self, basedir, n_processes, ending='.ARW'):
         self.basedir = basedir
-        self.image_dir = os.path.join(basedir, 'oads_arw', 'ARW')
+        self.image_dir = os.path.join(basedir, 'oads_arw', 'ARW') if '.ARW' in ending else basedir
         self.n_processes = n_processes
+        self.ending = ending
 
         self.image_names = os.listdir(self.image_dir)
 
@@ -39,9 +40,12 @@ class CustomOADS():
         Returns:
             tuple: A tuple containing the loaded image and its label.
         """
-        with rawpy.imread(os.path.join(self.image_dir, f'{image_name}.ARW')) as raw:
-            img = raw.postprocess()
-            img = Image.fromarray(img)
+        if 'ARW' in self.ending:
+            with rawpy.imread(os.path.join(self.image_dir, f'{image_name}{self.ending}')) as raw:
+                img = raw.postprocess()
+                img = Image.fromarray(img)
+        else:
+            img = Image.open(os.path.join(self.image_dir, f'{image_name}'))
         
         label = ''
         tup = (img, label)
