@@ -148,21 +148,16 @@ def iterate_load_subject_data(args):
 ###############
 if __name__ == '__main__':
 
-    eeg_dir = f'/home/nmuller/projects/data/oads_eeg/sub_13' # /sub_13-OC&CSD-AutoReject-epo.fif
-    channel_names, t = load_eeg_channel_and_timepoints(eeg_dir, sub=13)
+    eeg_dir = f'../../eeg_data/main_experiment'
+    channel_names, t = load_eeg_channel_and_timepoints()
 
-    # result_dir = '/home/nmuller/projects/oads_eeg_spatial_sampling/results'
-    encoding_model_dir = '../results/sub-{sub}/{model_type}/{layer}/{encoding_model}'
-    result_dir = '../TEST_results/sub-{sub}/{model_type}/{layer}'
-    # cleaning = 'AutoReject'
+    encoding_model_dir = '../../results/sub-{sub}/{model_type}/{layer}/{encoding_model}'
+    result_dir = '../../results/sub-{sub}/{model_type}/{layer}'
 
     cols = ['subject', 'model_type', 'layer', 'n_pca_components', 'condition', 'given', 'channel', 'channel_index', 'timepoint', 'timepoint_index', 'metric', 'value']
     dtypes = {col: 'category' for col in cols if col != 'value'}
-    # dtypes['value'] = 'float'
 
     model_type = 'alexnet_imagenet'
-
-    # df = pd.read_parquet(os.path.join(encoding_model_dir, f'all_encoding_model_data_feature_cropping-{cleaning}.parquet'))
 
     for sub in tqdm.tqdm(range(5, 6), total=1):
         _, _rows = iterate_load_subject_data((sub, encoding_model_dir))
@@ -172,10 +167,7 @@ if __name__ == '__main__':
         for col in cols:
             if col in dtypes:
                 df[col] = df[col].astype(dtypes[col]) # type: ignore
-        # else:
-        #     df = pd.concat((df, pd.DataFrame(_rows, columns=cols)))
-        #     for col in cols:
-        #         df[col] = df[col].astype(dtypes[col])
+
 
         os.makedirs(result_dir.format(sub=sub, model_type=model_type, layer='across-layers'), exist_ok=True)
         df.to_parquet(os.path.join(result_dir.format(sub=sub, model_type=model_type, layer='across-layers'), f'partial_correlation_feature_cropping.parquet'))

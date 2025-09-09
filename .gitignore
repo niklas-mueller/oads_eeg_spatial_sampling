@@ -1,4 +1,5 @@
 __pycache__/
+*/__pycache__/
 
 results
 additional_results
@@ -8,3 +9,8 @@ figures
 dataset
 
 figure_scripts/task_accuracy_per_subject.ipynb
+figure_scripts/images_per_subject.ipynb
+
+analysis/additional_experiment/compute_oads_res_noise_ceiling.py
+
+eeg_info.yaml

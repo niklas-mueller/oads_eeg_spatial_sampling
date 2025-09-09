@@ -1,48 +1,6 @@
 import os
-import numpy as np
-from PIL import Image
-import torchvision
-# from torchvision.models import alexnet
-# import numpy as np
-import matplotlib.pyplot as plt
-# from pytorch_utils.resnet10 import ResNet10
-import torch
-from torch.utils.data import DataLoader
-from result_manager.result_manager import ResultManager
-# from oads_access.oads_access import OADS_Access, OADSImageDataset
-from torchvision.models import resnet18, resnet50, alexnet
-from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision import transforms
-from pytorch_utils.pytorch_utils import ToJpeg, ToOpponentChannel, collate_fn, record_activations, EdgeResize, ToRetinalGanglionCellSampling, EdgeCrop
-from sklearn.decomposition import PCA
-from lgnpy.CEandSC.lgn_statistics import regress, get_field_of_view
-import tqdm
-from scipy.stats import zscore
 from mne import read_epochs
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-import rawpy
-import seaborn as sns
-import multiprocessing
-
-import matplotlib as mpl
-import matplotlib.patches as patches
-
-from scipy.stats import zscore, ttest_ind, ttest_1samp
-from statsmodels.stats.multitest import fdrcorrection
-import matplotlib.patches as mpatches
-from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib import patches
-from mne import create_info
-from mne.viz import plot_topomap
-from mne.channels import get_builtin_montages, make_dig_montage, make_standard_montage
-
-from oads_access.oads_access import OADS_Access
-import pickle
-import cProfile
-from memory_profiler import profile
 
 def iterate_load_subject_data(args):
     sub, result_manager = args

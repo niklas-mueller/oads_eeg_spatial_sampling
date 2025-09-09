@@ -4,16 +4,10 @@ import pickle
 import os
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-from utils import OADSImageDataset
-from torchvision.models import alexnet
-from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision import transforms
-from pytorch_utils.pytorch_utils import collate_fn, record_activations, ToRetinalGanglionCellSampling
+from pytorch_utils.pytorch_utils import ToRetinalGanglionCellSampling
 from sklearn.decomposition import PCA
 import tqdm
 from sklearn.linear_model import LinearRegression
-import rawpy
 from PIL import Image
 
 from eeg_data import load_eeg_channel_and_timepoints, load_eeg_filenames, load_eeg_data
@@ -52,8 +46,7 @@ def convert_to_df(sub, exp_condition, results):
     fraction = results['fraction']
     crop_instance = results['crop_instance']
 
-    eeg_dir = f'/home/nmuller/projects/fmg_storage/Data/sub_{sub}/Preprocessed epochs' # /sub_{sub}-OC&CSD-AutoReject-epo.fif
-    channel_names, t = load_eeg_channel_and_timepoints(eeg_fif_dir=eeg_dir, sub=sub, exp_condition=exp_condition)
+    channel_names, t = load_eeg_channel_and_timepoints()
 
     # Loop over channels and timepoints and save results
     for channel in results['corr_channels'].keys():
@@ -150,7 +143,6 @@ def iter(args):
         test_pred_channels[channel] = test_preds
 
 
-    # save_dir = f'../../results/{"/400_pixels" if reduce_size else ""}/encoding{mode}{"" if eye_reject is None else "eye_reject-rejected" if eye_reject else "eye_reject_accepted"}_{model_type}_share-pca_partial-corr_feature-cropping{cleaning}_{exp_condition}'
     save_dir = save_dir.format(sub=sub, model_type=model_type, exp_condition=exp_condition, layer=layer_name, encoding_model=f'{crop_condition}-{crop_instance}-{fraction}')
     save_filename = os.path.join(save_dir, f'encoding_results_sub_{sub}_{layer_name}_{model_type}_{exp_condition}_feature-cropping_{crop_condition}-{crop_instance}-{fraction}.pkl')
 
@@ -185,7 +177,6 @@ def iter(args):
     df = convert_to_df(sub=sub, exp_condition=exp_condition, results=results)
 
     # # Save to parquet
-    # filename = f'encoding_results_pca_{n_components}_sub_{sub}_{model_type}_feature-cropping_{layer_name}_{crop_condition}_{crop_instance}_{fraction}.parquet'
     df.to_parquet(os.path.join(save_filename.replace('.pkl', '.parquet')), index=False)
 
 def get_circular_mask(size, center_fraction):
@@ -215,8 +206,6 @@ def main(result_dir):
     num_workers = 8
     
     gpu_name = 'cuda:1'
-    device = torch.device(gpu_name if torch.cuda.is_available() else 'cpu')
-    batch_size = 32 #512 # 512
 
     load_features_from_file = True
     model_type = 'alexnet_imagenet' # 'alexnet_imagenet'
@@ -231,13 +220,9 @@ def main(result_dir):
 
             gcs = {}
 
-            # eeg_dir = 'data_clean/base_dir_reordered/data_with_reject/'
-            eeg_dir = f"data_SECOND_BATCH{mode}{'' if eye_reject is None else 'eye_reject-rejected' if eye_reject else 'eye_reject_accepted'}/dataclean/preprocessed_for_screening/data_with_reject/"
+            eeg_dir = f"../../eeg_data/additional/experiment"
             
-            print(eeg_dir)
-
-            filenames_dir = 'data_clean/base_dir_reordered/data_with_reject/'
-            train_ids, test_ids = load_eeg_filenames(eeg_dir=filenames_dir, exp_condition=exp_condition)
+            train_ids, test_ids = load_eeg_filenames(eeg_dir=eeg_dir, exp_condition=exp_condition)
 
             for sub in [12, 15, 16, 17, 18, 19]:
                 train_data, test_data = load_eeg_data(eeg_dir=eeg_dir, exp_condition=exp_condition, sub=sub)
@@ -254,23 +239,30 @@ def main(result_dir):
                 t = [i/sample_rate - 0.1 for i in range(n_timepoints)]
 
                 if load_features_from_file:
-                    feature_dir = '/home/nmuller/projects/fmg_storage/TEST_feature_extraction'
+                    feature_dir = '../../dnn_features'
 
-                    with h5py.File(os.path.join(feature_dir, 'additional_activations.h5'), 'r') as activations:
-                        # Divide extracted features into training and test sets
-                        train_activations = {
-                            layer_name: {
-                                image_index: feature[()] for image_index, feature in activations[layer_name].items() if image_index in train_ids
-                            } for layer_name in activations.keys()
-                        }
+                    activations = np.load(os.path.join(feature_dir, f'additional_experiment_{model_type}_activations.npz'), allow_pickle=True)
+                    
+                    with open(os.path.join(feature_dir, f'additional_experiment_image_id_order.pkl'), 'rb') as f:
+                        image_id_order = pickle.load(f)
 
-                        test_activations = {
-                            layer_name: {
-                                image_index: feature[()] for image_index, feature in activations[layer_name].items() if image_index in test_ids
-                            } for layer_name in activations.keys()
-                        }
+                    train_id_indices = [image_id_order.index(x) for x in train_ids if x in image_id_order]
+                    test_id_indices = [image_id_order.index(x) for x in test_ids if x in image_id_order]
+
+                    train_activations = {
+                        layer_name: {
+                            image_index: activations[layer_name].item().get(image_index) for image_index in train_id_indices
+                        } for layer_name in activations.keys()
+                    }
+                    
+                    test_activations = {
+                        layer_name: {
+                            image_index: activations[layer_name].item().get(image_index) for image_index in test_id_indices
+                        } for layer_name in activations.keys()
+                    }
+
                 else:
-                    activations = extract_features(model_type=model_type, oads_dir='oads_resolution_experiment/stimuli', fileending='.png', num_workers=num_workers)
+                    activations = extract_features(model_type=model_type, oads_dir='../stimuli', fileending='.png', num_workers=num_workers)
 
                     # Divide extracted features into training and test sets
                     train_activations = {
@@ -361,7 +353,7 @@ def main(result_dir):
 
 
 if __name__ == '__main__':
-    result_dir = '../TEST_results/additional_experiment/{exp_condition}/sub-{sub}/{model_type}/{layer}/{encoding_model}'
+    result_dir = '../../results/additional_experiment/{exp_condition}/sub-{sub}/{model_type}/{layer}/{encoding_model}'
 
     # Since all subjects have seen the same images, we are not looping over subjects here, but instead load the CNN features once and then iterate over subjects
     main(result_dir)

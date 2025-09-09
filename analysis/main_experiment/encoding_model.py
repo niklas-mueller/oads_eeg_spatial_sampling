@@ -125,7 +125,7 @@ def iter(args):
 
     # Save results
     # save_dir = f'{save_dir}/encoding_{model_type}_feature-cropping'
-    # '../results/sub-{sub}/{layer}/{encoding_model}/{filename}'
+    # '../../results/sub-{sub}/{layer}/{encoding_model}/{filename}'
     save_dir = save_dir.format(sub=sub, model_type=model_type, layer=layer_name, encoding_model=f'{crop_condition}-{crop_instance}-{fraction}')
     os.makedirs(save_dir, exist_ok=True)
     
@@ -223,27 +223,29 @@ def run_regression(sub, eeg_dir, result_dir, load_features_from_file:bool=True):
 
     ################ Load features
     model_type = 'alexnet_imagenet'
-    feature_dir = '/home/nmuller/projects/fmg_storage/TEST_feature_extraction'
+    feature_dir = '../../dnn_features'
+
     if load_features_from_file:
-        # Load extracted features
-        # with open(os.path.join(feature_dir, 'activations.pkl'), 'rb') as f:
-        #     activations = pickle.load(f)
 
-        # activations = h5py.File(os.path.join(feature_dir, 'activations.h5'), 'r')
-        with h5py.File(os.path.join(feature_dir, 'activations.h5'), 'r') as activations:
-            # Divide extracted features into training and test sets
-            train_activations = {
-                layer_name: {
-                    image_index: feature[()] for image_index, feature in activations[layer_name].items() if image_index in train_ids
-                } for layer_name in activations.keys()
-            }
+        activations = np.load(os.path.join(feature_dir, f'main_experiment_{model_type}_activations.npz'), allow_pickle=True)
+        
+        with open(os.path.join(feature_dir, f'main_experiment_image_id_order.pkl'), 'rb') as f:
+            image_id_order = pickle.load(f)
 
-            test_activations = {
-                layer_name: {
-                    image_index: feature[()] for image_index, feature in activations[layer_name].items() if image_index in test_ids
-                } for layer_name in activations.keys()
-            }
+        train_id_indices = [image_id_order.index(x) for x in train_ids if x in image_id_order]
+        test_id_indices = [image_id_order.index(x) for x in test_ids if x in image_id_order]
 
+        train_activations = {
+            layer_name: {
+                image_index: activations[layer_name].item().get(image_index) for image_index in train_id_indices
+            } for layer_name in activations.keys()
+        }
+        
+        test_activations = {
+            layer_name: {
+                image_index: activations[layer_name].item().get(image_index) for image_index in test_id_indices
+            } for layer_name in activations.keys()
+        }
 
     else:
         activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='/home/nmuller/projects/data/oads', model_type=model_type, save_dir=feature_dir, device=device)
@@ -304,17 +306,17 @@ def run_regression(sub, eeg_dir, result_dir, load_features_from_file:bool=True):
                     # for fraction in [0.005, 0.01, 0.05, 0.1, 0.2]: # This refers to the percentage of the area of the feature map
                     for fraction in [0.005]: # This refers to the percentage of the area of the feature map
 
-                        # # (b.1) Circular mask
-                        # small_circ_mask = get_circular_mask(shape, fraction)
-                        # large_circ_mask = get_circular_mask(shape, fraction+0.15)
-                        # intersect_circ_mask = np.where(small_circ_mask, 0, large_circ_mask).astype(bool)
+                        # (b.1) Circular mask
+                        small_circ_mask = get_circular_mask(shape, fraction)
+                        large_circ_mask = get_circular_mask(shape, fraction+0.15)
+                        intersect_circ_mask = np.where(small_circ_mask, 0, large_circ_mask).astype(bool)
 
-                        # intersect_circ_flat = feature[intersect_circ_mask.astype(bool)]
-                        # center_circ_flat = feature[small_circ_mask.astype(bool)]
-                        # periphery_circ_flat = feature[~small_circ_mask.astype(bool)]
+                        intersect_circ_flat = feature[intersect_circ_mask.astype(bool)]
+                        center_circ_flat = feature[small_circ_mask.astype(bool)]
+                        periphery_circ_flat = feature[~small_circ_mask.astype(bool)]
 
-                        # (b.2) Rectangular mask
-                        mask = get_rectangular_mask(shape, fraction)
+                        # # (b.2) Rectangular mask
+                        # mask = get_rectangular_mask(shape, fraction)
 
                         # center_fraction = fraction
                         # out_fraction = center_fraction + 0.15
@@ -322,17 +324,17 @@ def run_regression(sub, eeg_dir, result_dir, load_features_from_file:bool=True):
                         # mask_large = get_rectangular_mask(shape, center_fraction + out_fraction)
                         # mask_intersect = np.where(mask_small, 0, mask_large).astype(bool)
 
-                        center_flat = feature[mask]
-                        periphery_flat = feature[~mask]
+                        # center_flat = feature[mask]
+                        # periphery_flat = feature[~mask]
                         # intersect_flat = feature[mask_intersect]
                         # ####################################
 
                         fraction_outputs[fraction] = {
-                            'center': center_flat, 
-                            'periphery': periphery_flat, 
+                            # 'center': center_flat, 
+                            # 'periphery': periphery_flat, 
                             # 'intersect_flat': intersect_flat, 
-                            # 'center_circ': center_circ_flat,
-                            # 'periphery_circ': periphery_circ_flat,
+                            'center_circ': center_circ_flat,
+                            'periphery_circ': periphery_circ_flat,
                             # 'intersect_circ': intersect_circ_flat,
                         }
 
@@ -398,9 +400,9 @@ def run_regression(sub, eeg_dir, result_dir, load_features_from_file:bool=True):
 
 if __name__ == '__main__':
     load_features_from_file = False
-    eeg_dir = '/home/nmuller/projects/fmg_storage/osf_eeg_data/AutoReject'
+    eeg_dir = '../../eeg_data/main_experiment'
 
     for sub in range(5, 36):
-        result_dir = '../TEST_results/sub-{sub}/{model_type}/{layer}/{encoding_model}'
+        result_dir = '../../results/sub-{sub}/{model_type}/{layer}/{encoding_model}'
 
         run_regression(sub=sub, eeg_dir=eeg_dir, result_dir=result_dir, load_features_from_file=load_features_from_file)

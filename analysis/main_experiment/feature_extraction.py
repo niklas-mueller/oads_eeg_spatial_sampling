@@ -1,15 +1,13 @@
 import numpy as np
 import os
 import pickle
-import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.models import alexnet, AlexNet_Weights
 from torchvision.models.feature_extraction import create_feature_extractor
-import h5py
 
 import sys
-sys.path.append('../..')
+sys.path.append('../../..')
 
 from utils import OADSImageDataset, record_activations, collate_fn, CustomOADS
 from eeg_data import load_eeg_filenames
@@ -54,7 +52,7 @@ def extract_features(model_type, oads_dir, save_dir, fileending='.ARW', save_to_
     # Gather all IDs from all subjects
     all_ids = []
 
-    eeg_dir = '/home/nmuller/projects/fmg_storage/osf_eeg_data/AutoReject'
+    eeg_dir = '../../eeg_data/main_experiment'
     for sub in subjects:
         train_ids, test_ids = load_eeg_filenames(eeg_dir, sub)
 
@@ -75,31 +73,21 @@ def extract_features(model_type, oads_dir, save_dir, fileending='.ARW', save_to_
     if save_to_file:
         # ##### Save Activations
         os.makedirs(save_dir, exist_ok=True)
-        # with open(f'{save_dir}/activations.pkl', 'wb') as f:
-        #     pickle.dump(activations, f)
 
         npy_activations = {
             layer_name: np.vstack([activations[layer_name][img_id] for img_id in activations[layer_name].keys()]) for layer_name in activations.keys()
         }
 
-        np.savez_compressed(f'{save_dir}/activations.npz', **npy_activations)
+        np.savez_compressed(f'{save_dir}/main_experiment_{model_type}_activations.npz', **npy_activations)
         # Save image order
-        with open(f'{save_dir}/image_ids.pkl', 'wb') as f:
+        with open(f'{save_dir}/main_experiment_image_id_order.pkl', 'wb') as f:
             pickle.dump(all_ids, f)
-
-        # with h5py.File(f'{save_dir}/activations.h5', 'w') as f:
-        #     # create group for filename
-        #     for layer_name in activations.keys():
-        #         layer_group = f.create_group(layer_name)
-        #         for img_id in activations[layer_name].keys():
-        #             # create dataset for each image id
-        #             layer_group.create_dataset(str(img_id), data=activations[layer_name][img_id])
 
     return activations
 
 if __name__ == '__main__':
 
     ### Main experiment
-    oads_dir = '/home/nmuller/projects/data/oads'
-    save_dir = '/home/nmuller/projects/fmg_storage/TEST_feature_extraction'
-    extract_features(model_type='alexnet', oads_dir=oads_dir, save_dir=save_dir, save_to_file=True, subjects=list(range(5,36)))
+    oads_dir = '../../stimuli'
+    save_dir = '../../dnn_features'
+    extract_features(model_type='alexnet_imagenet', oads_dir=oads_dir, save_dir=save_dir, save_to_file=True, subjects=list(range(5,36)))

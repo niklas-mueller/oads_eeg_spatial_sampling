@@ -57,10 +57,9 @@ if __name__ == '__main__':
     model_type = 'alexnet_imagenet'  # Change to the model type you are using
     layer_name = 'across-layers'
 
-    contribution_dir = '../results/{sub}/{model_type}/{layer_name}/contribution_maps'
+    contribution_dir = '../../results/{sub}/{model_type}/{layer_name}/contribution_maps'
 
-    eeg_dir = f'/home/nmuller/projects/data/oads_eeg/sub_13' # /sub_13-OC&CSD-AutoReject-epo.fif
-    channel_names, t = load_eeg_channel_and_timepoints(eeg_dir, sub=13)
+    channel_names, t = load_eeg_channel_and_timepoints()
 
     n_channels = len(channel_names)
     n_timepoints = len(t)

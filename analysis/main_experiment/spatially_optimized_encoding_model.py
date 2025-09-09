@@ -206,12 +206,6 @@ def iter_optimized(args):
     """CPU-optimized main iteration function"""
     layer_name, outputs, contribution, train_data, test_data, do_channels, do_timepoints, n_channels, n_timepoints, n_components, model_type, sub, crop_condition, crop_instance, fraction = args
 
-    # # Force CPU processing unless single GPU requested
-    # if device is None or not use_gpu:
-    #     device = torch.device('cpu')
-    # elif use_gpu:
-    #     device = torch.device('cuda:0')
-    
     # Precompute shapes and resize contributions
     shape = {layer: outputs['train'][layer][0][0].shape[::-1] for layer in outputs['train'].keys()}
     # print("Precomputing resized contributions...")
@@ -241,24 +235,14 @@ def iter_optimized(args):
         offset += size
     total_dim = offset
     
-    # # Load PCA model
-    # pca_path = os.path.join(
-    #     f'{home_path}/projects/fmg_storage/oads_experiment_analysis/correct_size_new_fit/{"Ridge_" if use_ridge_regression else ""}encoding_{model_type}_share-pca_partial-corr_feature-cropping{cleaning}',
-    #     f'{"Ridge_" if use_ridge_regression else ""}encoding_results_pca_{n_components}_sub_{sub}_{model_type}_feature-cropping_{layer_name}_{image_representation}_{image_quality}_{image_resolution}_feature_feature-full_1.0.pkl'
-    # )
-    
-    # with open(pca_path, 'rb') as f:
-    #     fitting_results = pickle.load(f)
-    # pca = fitting_results['pca']
+
     pca = None
     
     # Process channels with CPU optimization
     corr_channels = {}
     pred_channels = {}
-    # mi_channels = {}
     test_corr_channels = {}
     test_pred_channels = {}
-    # test_mi_channels = {}
     
     # Determine optimal number of processes
     # Balance between parallelism and memory usage
@@ -299,22 +283,13 @@ def iter_optimized(args):
         for batch_result in batch_results:
             corrs.extend(batch_result['corrs'])
             preds.extend(batch_result['preds'])
-            # mis.extend(batch_result['mis'])
             test_corrs.extend(batch_result['test_corrs'])
             test_preds.extend(batch_result['test_preds'])
-            # test_mis.extend(batch_result['test_mis'])
         
         corr_channels[channel] = corrs
         pred_channels[channel] = preds
-        # mi_channels[channel] = mis
         test_corr_channels[channel] = test_corrs
         test_pred_channels[channel] = test_preds
-        # test_mi_channels[channel] = test_mis
-    
-    # # Prepare results
-    # result_manager = ResultManager(
-    #     root=f'{home_path}/projects/fmg_storage/oads_experiment_analysis/cpu_optimized_min_max/{"Ridge_" if use_ridge_regression else ""}encoding_{model_type}_share-pca_partial-corr_feature-cropping{cleaning}'
-    # )
 
     result_dir = f'../results/sub-{sub}/alexnet_imagenet/across-layers/spatially-optimized'
     
@@ -330,18 +305,10 @@ def iter_optimized(args):
         'corr_channels': corr_channels,
         'test_corr_channels': test_corr_channels,
         'n_components': n_components,
-        # # 'mi_channels': mi_channels,
-        # # 'test_mi_channels': test_mi_channels,
         'pca': pca,
         'pred_channels': pred_channels,
         'test_pred_channels': test_pred_channels,
     }
-    
-    # result_manager.save_result(
-    #     result=results, 
-    #     filename=f'{"Ridge_" if use_ridge_regression else ""}encoding_results_pca_{n_components}_sub_{sub}_{model_type}_cpu-optimized_{layer_name}_{image_representation}_{image_quality}_{image_resolution}_{crop_condition}_{crop_instance}_{fraction}.pkl', 
-    #     overwrite=True
-    # )
     
     filename=f'encoding_results_sub_{sub}_{layer_name}_{model_type}_{crop_condition}-{crop_instance}-{fraction}.pkl'
 
@@ -353,21 +320,6 @@ def iter_optimized(args):
 
     print(f"Completed processing for subject {sub}")
     
-
-# class CustomOADS:
-#     def __init__(self, basedir, n_processes):
-#         self.basedir = basedir
-#         self.image_dir = os.path.join(basedir, 'oads_arw', 'ARW')
-#         self.n_processes = n_processes
-#         self.image_names = os.listdir(self.image_dir)
-
-#     def load_image(self, image_name):
-#         with rawpy.imread(os.path.join(self.image_dir, f'{image_name}.ARW')) as raw:
-#             img = raw.postprocess()
-#             img = Image.fromarray(img)
-#         label = ''
-#         return (img, label)
-
 if __name__ == '__main__':
     # Initialize multiprocessing
     mp.set_start_method('spawn', force=True)
@@ -377,22 +329,8 @@ if __name__ == '__main__':
     model_type = 'alexnet_imagenet'
     load_features_from_file = False
 
-
-    
-    # home_path = os.path.expanduser('~')
     num_workers = min(nproc, 32)  # Limit workers to prevent oversubscription
-    
-    # # Setup device (CPU or single GPU)
-    # if use_gpu and torch.cuda.is_available():
-    #     device = torch.device('cuda:0')
-    #     print(f'Running on GPU: {device}')
-    #     torch.cuda.empty_cache()
-    # else:
-    #     device = torch.device('cpu')
-    #     print(f'Running on CPU with {nproc} cores')
 
-    #     model_device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-    
     # CPU-optimized batch size
     batch_size = 8
     
@@ -403,31 +341,15 @@ if __name__ == '__main__':
     std = [0.2362, 0.2252, 0.2162]
     
     cleaning = '-AutoReject'
-    
-    # output_channels = 1000 if 'imagenet' in model_type else 21
-    # preload_all = False
-    # use_crops = False
-    
-    # width = 2155
-    # height = 1440
-    # ap = height / width
-    # size = (int(height), int(width))
-    
-    # image_representations = ['rgb']
-    # image_qualities = ['raw']
-    # image_resolutions = [400]
-    # use_ridge_regression = False
+
 
 
     ###########################################
-    eeg_dir = f'/home/nmuller/projects/data/oads_eeg/sub_13/' # sub_13-OC&CSD-AutoReject-epo.fif
-    # epochs = read_epochs(fname=eeg_dir, preload=False)
-    channel_names, t = load_eeg_channel_and_timepoints(eeg_dir, sub=13)
+    eeg_dir = f'../../eeg_data/main_experiment'
+    channel_names, t = load_eeg_channel_and_timepoints()
 
-    # channel_names = epochs.ch_names
     n_channels = len(channel_names)
     n_timepoints = len(t)
-    # sample_rate = 1024
     do_timepoints = [i for i in range(150, n_timepoints-50, 20)]
 
     visual_channel_names = ['O1', 'O2', 'Oz', 'Iz', 'Pz', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'PO3', 'PO7', 'POz', 'PO4', 'PO8'] # , 'I1', 'I2']
@@ -435,24 +357,19 @@ if __name__ == '__main__':
     ###########################################
     
     # Process subjects in parallel or sequentially based on memory constraints
-    # subjects = range(5, 12)
-    # subjects = range(13, 20)
-    # subjects = range(20, 36)
-    # subjects = range(27, 36)
-    subjects = [26]
+    subjects = range(5, 36)
     
     for sub in subjects:
         print(f"Starting processing for subject {sub}")
         
         # Load contribution maps
-        result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/random_patch_contributions'
+        result_dir = '../../results/'
         contribution = np.load(os.path.join(result_dir, f'sub-{sub}', f'sub-{sub}_average_random_patch_contributions.npy'), allow_pickle=True).item()
         
         train_ids, test_ids, train_data, test_data = load_eeg_data(eeg_dir=eeg_dir, sub=sub)
         
         _, total_n_channels, total_n_timepoints = train_data.shape
-        # sample_rate = 1024
-        # t = [i/sample_rate - 0.1 for i in range(n_timepoints)]
+
         
         cont_shape = contribution[list(contribution.keys())[0]][list(contribution[list(contribution.keys())[0]].keys())[0]].shape
         print(f'Contribution shape: {cont_shape}')
@@ -469,101 +386,48 @@ if __name__ == '__main__':
         n_timepoints = len(do_timepoints)
         n_channels = len(do_channels)
 
-        # Load and process model
-            # basedir = f'{home_path}/projects/data/oads'
-            
-        # if model_type in ['alexnet', 'alexnet_imagenet', 'alexnet_gcs']:
-        #     return_nodes = {
-        #         'features.2': 'layer1',
-        #         'features.5': 'layer2', 
-        #         'features.12': 'layer3',
-        #     }
-            
-        #     if 'imagenet' in model_type:
-        #         model = alexnet(weights=AlexNet_Weights.IMAGENET1K_V1)
-        
-        # # Distribute model across GPUs if multiple available
-        # model = model.to(model_device)
-        # feature_extractor = create_feature_extractor(model, return_nodes=return_nodes)
-        
-        # transform_list = [
-        #     transforms.Resize(size),
-        #     transforms.ToTensor(),
-        #     transforms.Normalize(mean, std)
-        # ]
-        # transform = transforms.Compose(transform_list)
-        
-        # # Create datasets
-        # sub_train_ids = train_ids
-        # sub_test_ids = test_ids
-        
-        # testdataset = OADSImageDataset(
-        #     oads_access=oads, item_ids=sub_train_ids, use_crops=use_crops,
-        #     preload_all=False, target=None, return_index=True,
-        #     class_index_mapping=class_index_mapping, transform=transform, device=model_device
-        # )
-        
-        # test_testdataset = OADSImageDataset(
-        #     oads_access=oads, item_ids=sub_test_ids, use_crops=use_crops,
-        #     preload_all=False, target=None, return_index=True,
-        #     class_index_mapping=class_index_mapping, transform=transform, device=model_device
-        # )
-        
-        # # Use larger batch sizes and more workers for data loading
-        # testloader = DataLoader(
-        #     testdataset, collate_fn=collate_fn, batch_size=batch_size,
-        #     shuffle=False, num_workers=min(num_workers, 16), pin_memory=True
-        # )
-        
-        # test_testloader = DataLoader(
-        #     test_testdataset, collate_fn=collate_fn, batch_size=batch_size,
-        #     shuffle=False, num_workers=min(num_workers, 16), pin_memory=True
-        # )
-        
-        # # Extract features
-        # print("Extracting features...")
-        # train_activations = record_activations(
-        #     loader=testloader, models=[(model_type, feature_extractor)],
-        #     device=model_device, layer_names=return_nodes.values(),
-        #     flatten=False, to_numpy=False
-        # )
-        
-        # test_activations = record_activations(
-        #     loader=test_testloader, models=[(model_type, feature_extractor)],
-        #     device=model_device, layer_names=return_nodes.values(),
-        #     flatten=False, to_numpy=False
-        # )
 
-        feature_dir = '/home/nmuller/projects/fmg_storage/TEST_feature_extraction'
+        feature_dir = '../../dnn_features'
         if load_features_from_file:
             # Load extracted features
-            with open(os.path.join(feature_dir, 'activations.pkl'), 'rb') as f:
-                activations = pickle.load(f)
+            activations = np.load(os.path.join(feature_dir, f'main_experiment_{model_type}_activations.npz'), allow_pickle=True)
+            
+            with open(os.path.join(feature_dir, f'main_experiment_image_id_order.pkl'), 'rb') as f:
+                image_id_order = pickle.load(f)
+
+            train_id_indices = [image_id_order.index(x) for x in train_ids if x in image_id_order]
+            test_id_indices = [image_id_order.index(x) for x in test_ids if x in image_id_order]
+
+            train_activations = {
+                layer_name: {
+                    image_index: activations[layer_name].item().get(image_index) for image_index in train_id_indices
+                } for layer_name in activations.keys()
+            }
+
+            test_activations = {
+                layer_name: {
+                    image_index: activations[layer_name].item().get(image_index) for image_index in test_id_indices
+                } for layer_name in activations.keys()
+            }
 
         else:
-            activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='/home/nmuller/projects/data/oads', model_type=model_type, save_dir=feature_dir, device='cuda:0')
+            activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='../../stimuli', model_type=model_type, save_dir=feature_dir, device='cuda:0')
 
-        # Divide extracted features into training and test sets
-        train_activations = {
-            layer_name: {
-                image_index: feature for image_index, feature in activations[layer_name].items() if image_index in train_ids
-            } for layer_name in activations.keys()
-        }
+            # Divide extracted features into training and test sets
+            train_activations = {
+                layer_name: {
+                    image_index: feature for image_index, feature in activations[layer_name].items() if image_index in train_ids
+                } for layer_name in activations.keys()
+            }
 
-        test_activations = {
-            layer_name: {
-                image_index: feature for image_index, feature in activations[layer_name].items() if image_index in test_ids
-            } for layer_name in activations.keys()
-        }
+            test_activations = {
+                layer_name: {
+                    image_index: feature for image_index, feature in activations[layer_name].items() if image_index in test_ids
+                } for layer_name in activations.keys()
+            }
 
         del activations
-        
-        # # Cleanup
-        # del model, feature_extractor, testloader, test_testloader, testdataset, test_testdataset
-        # # for device in device_list:
-        # #     if device.type == 'cuda':
-        # #         torch.cuda.empty_cache()
-        
+                
         # Prepare outputs structure
         base_layer_name = list(train_activations.keys())[0] if len(train_activations) > 0 else list(test_activations.keys())[0]
         base_image_index = list(train_activations[base_layer_name].keys())[0] if len(train_activations[base_layer_name]) > 0 else list(test_activations[base_layer_name].keys())[0]
@@ -613,10 +477,6 @@ if __name__ == '__main__':
         ))
         
         print(f"Completed subject {sub}")
-        
-        # # Clear memory between subjects
-        # for device in device_list:
-        #     if device.type == 'cuda':
-        #         torch.cuda.empty_cache()
+
     
     print("All processing completed!")

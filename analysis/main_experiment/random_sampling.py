@@ -2,35 +2,10 @@ import os
 import numpy as np
 from PIL import Image
 import tqdm
-import multiprocessing
 import pickle
 
 from eeg_data import load_eeg_data
 from feature_extraction import extract_features
-
-# class CustomOADS():
-#     def __init__(self, basedir, n_processes):
-#         self.basedir = basedir
-#         self.image_dir = os.path.join(basedir, 'oads_arw', 'ARW')
-#         self.n_processes = n_processes
-
-#         self.image_names = os.listdir(self.image_dir)
-
-#     def load_image(self, image_name):
-#         # try:
-#         with rawpy.imread(os.path.join(self.image_dir, f'{image_name}.ARW')) as raw:
-#             img = raw.postprocess()
-#             img = Image.fromarray(img)
-#         # except Error as e:
-#         #     print(e)
-#         #     print(image_name)
-#         #     exit(1)
-#         # label = self.get_annotation(
-#         #     dataset_name=dataset_name, image_name=image_name, is_raw=is_raw)
-#         label = ''
-#         tup = (img, label)
-
-#         return tup
 
 def get_random_patch_mask(n_patches, size, shape, no_overlap:bool=True, no_center=None):
     rand_mask = np.zeros(shape).astype(bool)
@@ -145,143 +120,43 @@ def iterate_load_subject_data(args):
 
     return sub, pca, lin_reg
 
-    # unique_values = {}
-    rows = []
-    # rows_pca = []
-    for image_representation in ['rgb']:
-        for image_quality in ['raw']: 
-            for n_pca_components in [100]: 
-                for model_type in ['alexnet']: # alexnet_scce_full-crop
-                    for layer in ['across-layers']: # f'{model_type}_layer1',f'{model_type}_layer2',f'{model_type}_layer3', 
-                    # for layer in tqdm.tqdm(['across-layers'], total=1):
-                        for image_resolution in ['400']: # '_400'
-                            # for crop_condition in ['gcs', 'gcs_inverse', 'fraction']:
-                            for crop_condition in ['feature']: # 'gcs', 'gcs_inverse', 'fraction', 
-
-                                crop_instances = ['gcs-full'] if 'gcs' in crop_condition else (['center', 'periphery', 'center_circ', 'periphery_circ'] if 'fraction' in crop_condition else ['feature-full'])
-                                fractions = [1.0] if 'gcs' in crop_condition or 'feature' in crop_condition else [0.005, 0.01, 0.05, 0.1, 0.2] # 
-
-                                for fraction in fractions:
-                                    for crop_instance in crop_instances:
-
-
-                                        results = result_manager.load_result(filename=f'encoding_results_pca_{n_pca_components}_sub_{sub}_{model_type}_feature-cropping_{layer}_{image_representation}_{image_quality}_{image_resolution}_{crop_condition}_{crop_instance}_{fraction}.pkl')
-                                        folder = result_manager.root
-
-                                        # print(results.keys())
-                                        # return
-                                        
-                                        if results is not None:
-
-                                            # return results['lin_reg']
-                                            rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, 'lin_reg', results['lin_reg']])
-                                            rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, 'pca', results['pca']])
-                                            continue
-                                            
-                                            if 'timepoints' in results.keys():
-                                                timepoints = range(len(results['timepoints']))
-                                                
-                                            else:
-                                                timepoints = None
-
-                                            if 't' in results.keys():
-                                                t = results['t']
-                                            else:
-                                                t = [i/sample_rate - 0.1 for i in range(n_timepoints)]
-
-                                            # if 'explained_variance' in results.keys():
-                                            #     for layer_index in range(len(results['explained_variance'])):
-                                            #         for component in range(len(results['explained_variance'][layer_index])):
-                                            #             rows_pca.append([folder, sub, model_type, image_representation, image_quality, n_pca_components, component, image_resolution, layer, f'explained_variance', results['explained_variance'][layer_index][component]])
-                                            #             # rows_pca.append([folder, sub, model_type, image_representation, image_quality, n_pca_components, component, image_resolution, layer, f'test_explained_variance', results['test_explained_variance'][layer_index][component]])
-
-                                            for channel in results['corr_channels'].keys():
-                                                if timepoints is None:
-                                                    timepoints = range(len(results['corr_channels'][channel]))
-
-                                                for timepoint in timepoints:
-                                                    r2_train = results['corr_channels'][channel][timepoint]
-                                                    rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'corr_train', r2_train])
-                                                    # for col_idx, value in enumerate([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'r2_train', r2_train]):
-                                                    #     if col_idx not in unique_values:
-                                                    #         unique_values[col_idx] = [value]
-                                                    #     elif value not in unique_values[col_idx]:
-                                                    #         unique_values[col_idx].append(value)
-
-                                                    
-                                                    # r2_test = results['test_r2_channels'][channel][timepoint]
-                                                    # rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'r2_test', r2_test])
-                                                    # for col_idx, value in enumerate([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'r2_test', r2_test]):
-                                                    #     if col_idx not in unique_values:
-                                                    #         unique_values
-                                                    #     elif value not in unique_values[col_idx]:
-                                                    #         unique_values[col_idx].append(value)
-
-                                                    
-                                                    test_corr_train = results['test_corr_channels'][channel][timepoint]
-                                                    rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'test_corr_train', test_corr_train])
-                                                    # for col_idx, value in enumerate([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, -1, 'test_corr_train', test_corr_train]):
-                                                    #     if col_idx not in unique_values:
-                                                    #         unique_values[col_idx] = [value]
-                                                    #     elif value not in unique_values[col_idx]:
-                                                    #         unique_values[col_idx].append(value)
-
-                                                    
-                                                    # beta = results['beta_channels'][channel][timepoint]
-                                                    # rows.append([folder, sub, model_type, image_representation, image_quality, n_pca_components, channel_names[channel], t[timepoint], 'beta', beta])
-                                                    # for col_idx, value in enumerate([folder, sub, model_type, image_representation, image_quality, n_pca_components, channel_names[channel], t[timepoint], 'beta', beta]):
-                                                    #     if col_idx not in unique_values:
-                                                    #         unique_values[col_idx] = [value]
-                                                    #     elif value not in unique_values[col_idx]:
-                                                    #         unique_values[col_idx].append(value)
-
-
-                                                    # test_pred = results['test_pred_channels'][channel][timepoint]
-                                                    # for pred_index, pred in enumerate(test_pred):
-                                                    #     rows.append([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, pred_index, 'test_pred', pred])
-                                                    #     # for col_idx, value in enumerate([folder, sub, model_type, layer, image_representation, image_quality, n_pca_components, image_resolution, crop_condition, crop_instance, fraction, channel_names[channel], channel, t[timepoint], timepoint, pred_index, 'test_pred', pred]):
-                                                    #     #     if col_idx not in unique_values:
-                                                    #     #         unique_values[col_idx] = [value]
-                                                    #     #     elif value not in unique_values[col_idx]:
-                                                    #     #         unique_values[col_idx].append(value)
-
-
-    # rows = {col_idx: [unique_values[col_idx].index(row[col_idx]) for row in rows] for col_idx in unique_values}
-    return sub, result_manager, rows #, rows_pca
 
 
 def iter(args):
     sub, all_masks, shape, n_iterations, results, filename, num_workers = args
 
-    # oads_dir = '/home/nmuller/projects/data/oads'
     device = 'cuda:0'
-    result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/'
-    encoding_model_dir = f'/home/nmuller/projects/oads_eeg_spatial_sampling/results/sub-{sub}/alexnet_imagenet/across-layers/feature-feature-full-1.0'
+    result_dir = '../../results'
+    encoding_model_dir = f'../../results/sub-{sub}/alexnet_imagenet/across-layers/feature-feature-full-1.0'
     load_features_from_file = False
     
     model_type = 'alexnet_imagenet'
 
-    # if all_masks is None:
-    #     folder = 'encoding_267x400_alexnet_share-pca_partial-corr_feature-cropping-AutoReject'
-    # else:
-    #     folder = 'encoding_alexnet_share-pca_partial-corr_feature-cropping-AutoReject'
-
-    # results = [iterate_load_subject_data((sub, result_manager)) for sub in [sub]]
     _, pca, lin_reg = iterate_load_subject_data((sub, encoding_model_dir))
 
 
-    eeg_dir = '/home/nmuller/projects/fmg_storage/osf_eeg_data/AutoReject'
+    eeg_dir = '../../eeg_data/main_experiment'
     train_ids, _, train_data, _ = load_eeg_data(sub=sub, eeg_dir=eeg_dir)
     _, n_channels, n_timepoints = train_data.shape
 
-    feature_dir = '/home/nmuller/projects/fmg_storage/TEST_feature_extraction'
+    feature_dir = '../../dnn_features'
     if load_features_from_file:
         # Load extracted features
-        with open(os.path.join(feature_dir, 'activations.pkl'), 'rb') as f:
-            activations = pickle.load(f)
+        activations = np.load(os.path.join(feature_dir, f'main_experiment_{model_type}_activations.npz'), allow_pickle=True)
+        
+        with open(os.path.join(feature_dir, f'main_experiment_image_id_order.pkl'), 'rb') as f:
+            image_id_order = pickle.load(f)
 
+        train_id_indices = [image_id_order.index(x) for x in train_ids if x in image_id_order]
+
+        activations = {
+            layer_name: {
+                image_index: activations[layer_name].item().get(image_index) for image_index in train_id_indices
+            } for layer_name in activations.keys()
+        }
+        
     else:
-        activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='/home/nmuller/projects/data/oads', model_type=model_type, save_dir=feature_dir, device=device)
+        activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='../stimuli', model_type=model_type, save_dir=feature_dir, device=device)
 
     # Divide extracted features into training and test sets
     activations = {
@@ -289,12 +164,6 @@ def iter(args):
             image_index: feature for image_index, feature in activations[layer_name].items() if image_index in train_ids
         } for layer_name in activations.keys()
     }
-
-    # test_activations = {
-    #     layer_name: {
-    #         image_index: feature for image_index, feature in activations[layer_name].items() if image_index in test_ids
-    #     } for layer_name in activations.keys()
-    # }
 
     all_patch_correlations = {
         channel: {
@@ -322,7 +191,6 @@ def iter(args):
         else:
             rand_mask = all_masks[patch_index]
     
-        # p = np.random.rand()
         no_center = None # if patch_index > 1000 else True
 
         all_patch_activations = []
@@ -381,23 +249,9 @@ def iter(args):
         pickle.dump(results, f)
 
 
-def load_and_iter(args):
-    filename, sub, result_dir, num_workers = args
-
-    if os.path.exists(os.path.join('/home/nmuller/projects/fmg_storage/oads_experiment_analysis/', str(sub), f'sub-{sub}_{filename}')):
-        return
-    
-    results = pickle.load(open(os.path.join(result_dir, filename), 'rb'))
-    all_masks = results['all_masks']
-    shape = results['shape']
-    n_iterations = len(all_masks)
-
-    iter((sub, all_masks, shape, n_iterations, results, filename, num_workers))
-
-def run_new_subjects():
+if __name__ == '__main__':
     num_workers = 5 # nproc
-    # for sub in range(5, 15):
-    # for sub in range(15, 25):
+    
     for sub in range(5, 36):
         results = None
         all_masks = None
@@ -405,50 +259,3 @@ def run_new_subjects():
         n_iterations = 1000
 
         iter((sub, all_masks, shape, n_iterations, results, None, num_workers))
-
-# if __name__ == '__main__':
-def run_other_subjects():
-    # with open(os.path.join(result_dir, sub, f'random_patch_contribution_{n_patches}_{patch_size}x{patch_size}_so_no_center.pkl'), 'wb') as f:
-    #     pickle.dump(results, f)
-    names = [
-        'random_patch_contribution_10_20x20_so_no_center.pkl',
-        'random_patch_contribution_10_40x40_so_no_center.pkl',
-        'random_patch_contribution_20_20x20_no_center.pkl',
-        'random_patch_contribution_20_20x20_some_no_center.pkl',
-        'random_patch_contribution_2000_some_no_center.pkl',
-        'random_patch_contribution.pkl',
-    ]
-
-    result_dir = '/home/nmuller/projects/fmg_storage/oads_experiment_analysis/random_patch_contributions/sub-5'
-    num_workers = 2 # nproc
-    
-    with multiprocessing.Pool(num_workers) as pool:
-        pool.map(load_and_iter, [(filename, sub, result_dir, num_workers) for sub in [12, 26] for filename in names]) # range(5, 36)
-
-    # for filename in tqdm.tqdm(names, total=len(names), desc='Files'):
-    #     results = pickle.load(open(os.path.join(result_dir, filename), 'rb'))
-    #     all_masks = results['all_masks']
-    #     shape = results['shape']
-    #     n_iterations = len(all_masks)
-
-    #     # for sub in tqdm.tqdm(range(5, 36), total=31, desc='Subjects'):
-    #     #     # sub = 5
-
-    #     #     # n_patches = 10
-    #     #     # patch_size = 20
-    #     #     # n_iterations = 5000
-
-    #     #     iter((sub, all_masks, shape, n_iterations, results))
-
-    #     subs = range(6, 36)
-    #     if filename == 'random_patch_contribution_10_20x20_so_no_center.pkl':
-    #         subs = [9] + list(range(11, 36))
-
-    #     with multiprocessing.Pool(nproc) as pool:
-    #         pool.map(iter, [(sub, all_masks, shape, n_iterations, results, filename) for sub in subs])
-
-
-if __name__ == '__main__':
-    run_other_subjects()
-
-    # run_new_subjects()
