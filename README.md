@@ -30,4 +30,3 @@ Additional experiment
 1. Download the extracted DNN feature activation map from [OSF](https://osf.io/3jmwr/?view_only=0eba22fbab084fa4808db2c86110ca22) or extract them using ```analysis/additional_experiment/feature_extraction.py``` into ```dnn_features```
 2. Dowload the EEG data for the main experiment from [OSF](https://osf.io/myuj8/?view_only=bc5250407ef9463f83062eff3771d867) into ```eeg_data/additional_experiment```
 3. To run the encoding models (results for figure 4+5) use the code in ```analysis/additional_experiment/encoding_model.py```
-4. 
