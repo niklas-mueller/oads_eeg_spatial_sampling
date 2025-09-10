@@ -324,7 +324,7 @@ if __name__ == '__main__':
     # Initialize multiprocessing
     mp.set_start_method('spawn', force=True)
 
-    oads_dir = '/home/nmuller/projects/data/oads'
+    oads_dir = '../../stimuli'
 
     model_type = 'alexnet_imagenet'
     load_features_from_file = False

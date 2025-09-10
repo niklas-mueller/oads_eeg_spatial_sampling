@@ -27,8 +27,7 @@ def convert_to_df(sub, results):
     fraction = results['fraction']
     crop_instance = results['crop_instance']
 
-    eeg_dir = f'/home/nmuller/projects/fmg_storage/Data/sub_{sub}/Preprocessed epochs' # /sub_{sub}-OC&CSD-AutoReject-epo.fif
-    channel_names, t = load_eeg_channel_and_timepoints(eeg_fif_dir=eeg_dir, sub=sub)
+    channel_names, t = load_eeg_channel_and_timepoints()
 
     # Loop over channels and timepoints and save results
     for channel in results['corr_channels'].keys():
@@ -248,7 +247,7 @@ def run_regression(sub, eeg_dir, result_dir, load_features_from_file:bool=True):
         }
 
     else:
-        activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='/home/nmuller/projects/data/oads', model_type=model_type, save_dir=feature_dir, device=device)
+        activations = extract_features(save_to_file=False, subjects=[sub], oads_dir='../../stimuli', model_type=model_type, save_dir=feature_dir, device=device)
 
         # Divide extracted features into training and test sets
         train_activations = {
