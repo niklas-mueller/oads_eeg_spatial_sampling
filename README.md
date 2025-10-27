@@ -1,4 +1,4 @@
-# Spatially sampling convolutional neural network features predicts foveal and peripheral human visual processing
+# Linking retinal sampling in neural encoding models to temporal profiles of visual processing in humans
 
 This repository contains the code for the paper: "Linking retinal sampling in neural encoding models to temporal profiles of visual processing in humans".
 
